@@ -5,14 +5,6 @@ const sass = require('sass');
 const autoprefixer = require('autoprefixer');
 const pkg = require('./package.json');
 
-const banner = `/*!
- * Bootswatch v${pkg.version} (${pkg.homepage})
- * Copyright 2012-${new Date().getFullYear()} ${pkg.author}
- * Licensed under ${pkg.license}
- * Based on Bootstrap
-*/
-`;
-
 const SWATCHES = [
   'cerulean',
   'cosmo',
@@ -28,7 +20,6 @@ const SWATCHES = [
   'morph',
   'pulse',
   'quartz',
-  'regent',
   'sandstone',
   'simplex',
   'sketchy',
@@ -57,6 +48,7 @@ module.exports = grunt => {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-sass');
   grunt.loadNpmTasks('grunt-html');
+  grunt.loadNpmTasks('grunt-shell');
 
   // Force use of Unix newlines
   grunt.util.linefeed = '\n';
@@ -68,9 +60,6 @@ module.exports = grunt => {
       }
     },
     concat: {
-      options: {
-        banner
-      },
       dist: {
         src: [],
         dest: ''
@@ -83,11 +72,6 @@ module.exports = grunt => {
           cwd: 'node_modules/bootstrap-icons',
           src: ['font/**'],
           dest: 'docs/_vendor/bootstrap-icons/'
-        }, {
-          expand: true,
-          cwd: 'node_modules/jquery',
-          src: ['dist/**'],
-          dest: 'docs/_vendor/jquery/'
         }, {
           expand: true,
           cwd: 'node_modules/prismjs',
@@ -106,7 +90,8 @@ module.exports = grunt => {
           cwd: 'dist',
           src: [
             '**/*.css',
-            '**/*.scss'
+            '**/*.scss',
+            '**/*.map'
           ],
           dest: DOCS_DEST
         }]
@@ -150,9 +135,14 @@ module.exports = grunt => {
           1: {
             specialComments: 'all'
           }
-        }
+        },
+        sourceMap: true
       },
       dist: {
+        src: [],
+        dest: ''
+      },
+      rtl: {
         src: [],
         dest: ''
       }
@@ -195,7 +185,21 @@ module.exports = grunt => {
         ],
         tasks: 'build'
       }
+    },
+    shell: {  
+      options: {
+        stderr: false
+      },
+      rtlcss: {
+        command: function (theme) {
+          return `rtlcss dist/${theme}/bootstrap.css dist/${theme}/bootstrap.rtl.css`;
+        }
+      }
     }
+  });
+
+  grunt.registerTask('rtlcss', function (theme) {
+    grunt.task.run('shell:rtlcss:' + theme);
   });
 
   grunt.registerTask('build', 'build a regular theme from scss', theme => {
@@ -214,7 +218,19 @@ module.exports = grunt => {
     const concatDest = path.join(themeDir, '/build.scss');
     const cssDest = path.join(themeDir, '/bootstrap.css');
     const cssDestMin = path.join(themeDir, '/bootstrap.min.css');
+    const cssDestRtl = path.join(themeDir, '/bootstrap.rtl.css');
+    const cssDestRtlMin = path.join(themeDir, '/bootstrap.rtl.min.css');
 
+    const banner = `/*!
+ * Bootswatch v${pkg.version} (${pkg.homepage})
+ * Theme: ${theme}
+ * Copyright 2012-${new Date().getFullYear()} ${pkg.author}
+ * Licensed under ${pkg.license}
+ * Based on Bootstrap
+*/
+      `;
+
+    grunt.config.set('concat.options', {banner});
     grunt.config.set('concat.dist', {
       src: concatSrc,
       dest: concatDest
@@ -233,6 +249,10 @@ module.exports = grunt => {
       src: cssDest,
       dest: cssDestMin
     });
+    grunt.config.set('cssmin.rtl', {
+      src: cssDestRtl,
+      dest: cssDestRtlMin
+    });
 
     grunt.task.run([
       'concat',
@@ -240,6 +260,8 @@ module.exports = grunt => {
       'postcss:dist',
       'clean:build',
       'cssmin:dist',
+      `rtlcss:${theme}`,
+      'cssmin:rtl',
       'copy:css'
     ]);
   });

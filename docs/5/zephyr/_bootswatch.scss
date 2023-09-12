@@ -1,4 +1,4 @@
-// Zephyr 5.1.3
+// Zephyr 5.3.1
 // Bootswatch
 
 
@@ -53,6 +53,10 @@ $web-font-path: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700
       }
     }
   }
+}
+
+.navbar-nav {
+  --bs-nav-link-padding-x: .5rem;
 }
 
 // Buttons
@@ -172,16 +176,30 @@ thead th {
 
 // Containers
 
+.list-group-item,
+.card {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
+    color: inherit;
+  }
+}
+
 .list-group {
   box-shadow: $box-shadow-lg;
 }
 
 .card {
   box-shadow: $box-shadow-lg;
-
-  &-title {
-    color: inherit;
-  }
 }
 
 .modal-footer {
